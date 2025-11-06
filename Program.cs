@@ -12,7 +12,16 @@ builder.Configuration.AddAzureKeyVault(
 );
 
 // ✅ Read secret from Key Vault
-var connectionString = builder.Configuration["PostgresConnectionString"];
+string connectionString = string.Empty;
+try
+{
+    connectionString = builder.Configuration["PostgresConnectionString"];
+}
+catch (Exception ex)
+{
+    Console.WriteLine("KeyVault Error: " + ex.Message);
+}
+
 
 // ✅ Add PostgreSQL DB context
 builder.Services.AddDbContext<AppDbContext>(options =>
