@@ -5,13 +5,24 @@ using WebApplication4.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ✅ Use Service Principal to access Key Vault
+string tenantId = builder.Configuration["KeyVault:TenantId"];
+string clientId = builder.Configuration["KeyVault:ClientId"];
+string clientSecret = builder.Configuration["KeyVault:ClientSecret"];
+
+
+var clientSecretCredential = new ClientSecretCredential(
+    tenantId,
+    clientId,
+    clientSecret
+);
 // ✅ Add Key Vault (works locally and in Azure)
 builder.Configuration.AddAzureKeyVault(
     new Uri("https://myfirstkeyvault0508.vault.azure.net/"),
-    new DefaultAzureCredential()
+    clientSecretCredential
 );
 
-// ✅ Read secret from Key Vault
+// ✅ Read secret from Key Vault lTq8Q~.2Q9U6_KYr9Vxn3FYOppc8284CFOLEoa.K
 string connectionString = string.Empty;
 try
 {
