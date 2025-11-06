@@ -1,39 +1,35 @@
 using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Microsoft.EntityFrameworkCore;
 using WebApplication4.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ✅ Add Key Vault (works locally and in Azure)
+builder.Configuration.AddAzureKeyVault(
+    new Uri("https://myfirstkeyvault0508.vault.azure.net/"),
+    new DefaultAzureCredential()
+);
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();   
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-// ✅ Load Key Vault
-var keyVaultUrl = new Uri($"https://myfirstkeyvault0508.vault.azure.net/");
-    builder.Configuration.AddAzureKeyVault(keyVaultUrl, new DefaultAzureCredential());
-
+// ✅ Read secret from Key Vault
 var connectionString = builder.Configuration["PostgresConnectionString"];
 
+// ✅ Add PostgreSQL DB context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// ✅ Add Controllers + Swagger
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
-
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
-
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.RoutePrefix = "swagger"; // you can change URL
+});
 
 app.MapControllers();
-
 app.Run();
