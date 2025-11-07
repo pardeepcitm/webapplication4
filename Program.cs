@@ -12,7 +12,7 @@ builder.Configuration.AddAzureKeyVault(
     new DefaultAzureCredential()
 );
 
-// ✅ Read secret from Key Vault lTq8Q~.2Q9U6_KYr9Vxn3FYOppc8284CFOLEoa.K
+// ✅ Read secret from Key Vault  lTq8Q~.2Q9U6_KYr9Vxn3FYOppc8284CFOLEoa.K
 string connectionString = string.Empty;
 try
 {
