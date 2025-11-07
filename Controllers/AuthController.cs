@@ -3,6 +3,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -15,11 +16,13 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly TelemetryClient _telemetry;
 
-    public AuthController( AppDbContext context, IConfiguration config)
+    public AuthController( AppDbContext context, IConfiguration config, TelemetryClient telemetry)
     {
         _context = context;
         _config = config;
+        _telemetry = telemetry;
     }
 
     [HttpPost("register")]
@@ -44,12 +47,43 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (user == null || !PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            return Unauthorized("Invalid credentials");
+        try
+        {
+            _telemetry.TrackEvent("UserLoginAttempt", new Dictionary<string, string>
+            {
+                { "Email", request.Email }
+            }); 
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null || !PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
+            {
+            
+                _telemetry.TrackEvent("UserLoginFailed", new Dictionary<string, string>
+                {
+                    { "Email", request.Email },
+                    { "Reason", "Invalid credentials" }
+                });
+                return Unauthorized("Invalid credentials");
+            }
+            // Track successful login
+            _telemetry.TrackEvent("UserLoginSuccess", new Dictionary<string, string>
+            {
+                { "UserId", user.Id.ToString() },
+                { "Email", user.Email }
+            });
 
-        var token = GenerateJwtToken(user);
-        return Ok(new { token });
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
+        }
+        catch (Exception ex)
+        {
+            // Track exception
+            _telemetry.TrackException(ex, new Dictionary<string, string>
+            {
+                { "Email", request.Email }
+            });
+            throw; // Let the middleware handle it
+        }
+       
     }
 
     private string GenerateJwtToken(User user)

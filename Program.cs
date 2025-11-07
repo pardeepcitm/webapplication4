@@ -58,6 +58,15 @@ catch (Exception ex)
     Console.WriteLine("KeyVault Error: " + ex.Message);
 }
 
+// Read connection string from Key Vault
+var appInsightsConnectionString = builder.Configuration["AppInsightsKey"];
+
+// Add Application Insights using connection string
+builder.Services.AddApplicationInsightsTelemetry(options =>
+{
+    options.ConnectionString = appInsightsConnectionString;
+});
+
 
 // ✅ Add PostgreSQL DB context
 builder.Services.AddDbContext<AppDbContext>(options =>
